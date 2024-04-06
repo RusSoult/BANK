@@ -29,27 +29,43 @@ def hide_numbers(value: str):
     return f"{ident} {secret_number}"
 
 
+def filter_operation_by_state(operations, state):
+    return [op for op in operations if op.get('state', '') == state]
+
+
+def sort_operations_by_date(operations, reverse=False):
+    return sorted(
+        operations,
+        key=lambda x: x['date'], reverse=reverse
+    )
+
+
+def display_operation(operation):
+    date = datetime.datetime.fromisoformat(operation['date']).date().strftime('%Y.%m.%d')
+    to_operation = hide_numbers(operation['to'])
+
+    print(f"{date} {operation['description']}")
+    if 'from' in operation:
+        from_operation = hide_numbers(operation['from'])
+        print(f"{from_operation} -> {to_operation}")
+    else:
+        print(f"-> {to_operation}")
+
+    amount = operation['operationAmount']['amount']
+    currency = operation['operationAmount']['currency']['name']
+    print(f"{amount} {currency}")
+
+
 def display_last_operations(operations, limit=5):
-    executed_operations = [op for op in operations if op.get('state', '') == 'EXECUTED']
-    last_executed_operations = sorted(
-        executed_operations,
-        key=lambda x: x['date'], reverse=True
-    )[:limit]
+    executed_operations = filter_operation_by_state(operations, 'EXECUTED')
+    last_executed_operations = sort_operations_by_date(executed_operations, reverse=True)[:limit]
 
+    report_operations = []
     for operation in last_executed_operations:
-        date = datetime.datetime.fromisoformat(operation['date']).date().strftime('%Y.%m.%d')
-        to_operation = hide_numbers(operation['to'])
+        display_operation(operation)
+        report_operations.append(operation)
 
-        print(f"{date} {operation['description']}")
-        if 'from' in operation:
-            from_operation = hide_numbers(operation['from'])
-            print(f"{from_operation} -> {to_operation}")
-        else:
-            print(f" -> {to_operation}")
-
-        amount = operation['operationAmount']['amount']
-        currency = operation['operationAmount']['currency']['name']
-        print(f"{amount} {currency}")
+    return report_operations
 
 
 if __name__ == '__main__':
